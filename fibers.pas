@@ -19,7 +19,9 @@ type
   TFiber = class
   protected
     FContext: {$IfDef WINDOWS}Pointer{$Else}jmp_buf{$EndIf};
+    {$IfNDef WINDOWS}
     FExceptionState: TExceptionState;
+    {$EndIf}
     FLastFiber: TFiber;
   public
     procedure SwitchTo(TargetFiber: TFiber);

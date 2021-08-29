@@ -175,14 +175,14 @@ begin
 end;
 {$Else}
 var
-  StackMem, StackPtr, BasePtr, NewStackPtr, NewBasePtr: Pointer;
+  StackPtr, BasePtr, NewStackPtr, NewBasePtr: Pointer;
   FrameSize: SizeInt;
   backjump: jmp_buf;
   PreviousExceptionState: TExceptionState;
 begin
   inherited Create;
   FLastFiber := GetCurrentFiber;
-  StackMem := GetMem(StackSize);
+  FStack := GetMem(StackSize);
   // Reset excaption stacks
   FillChar(FExceptionState, SizeOf(FExceptionState), 0);
   // Setup backjump to return from constructor
@@ -198,7 +198,7 @@ begin
   MOV BasePtr, RBP
   end;
   FrameSize := BasePtr - StackPtr;
-  NewBasePtr := StackMem + StackSize;
+  NewBasePtr := FStack + StackSize;
   NewStackPtr := NewBasePtr - FrameSize;
   Move(PByte(StackPtr)^, PByte(NewStackPtr)^, FrameSize);
   // set new stack as current stack

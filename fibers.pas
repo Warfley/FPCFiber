@@ -19,6 +19,7 @@ type
   TFiber = class
   protected
     FContext: {$IfDef WINDOWS}Pointer{$Else}jmp_buf{$EndIf};
+    FExceptionState: TExceptionState;
     FLastFiber: TFiber;
   public
     procedure SwitchTo(TargetFiber: TFiber);
@@ -75,8 +76,12 @@ begin
   {$IfDef WINDOWS}
     SwitchToFiber(ToFiber.FContext);
   {$Else}
+  SaveExceptionState(FromFiber.FExceptionState);
   if setjmp(FromFiber.FContext) = 0 then
+  begin
+    RestoreExceptionState(ToFiber.FExceptionState);
     longjmp(ToFiber.FContext, 1);
+  end;
   {$EndIf}
   // once we return here, we are again at FromFiber
   CurrentFiber := FromFiber;
@@ -173,12 +178,20 @@ var
   StackMem, StackPtr, BasePtr, NewStackPtr, NewBasePtr: Pointer;
   FrameSize: SizeInt;
   backjump: jmp_buf;
+  PreviousExceptionState: TExceptionState;
 begin
   inherited Create;
   FLastFiber := GetCurrentFiber;
   StackMem := GetMem(StackSize);
+  // Reset excaption stacks
+  FillChar(FExceptionState, SizeOf(FExceptionState), 0);
+  // Setup backjump to return from constructor
+  SaveExceptionState(PreviousExceptionState);
   if setjmp(backjump) <> 0 then
+  begin
+    RestoreExceptionState(PreviousExceptionState);
     Exit;
+  end;
   // setup stack: copy current frame to new stack
   asm
   MOV StackPtr, RSP

@@ -1,0 +1,67 @@
+diff --git a/rtl/inc/except.inc b/rtl/inc/except.inc
+index e224f7b34d..76a490f0ec 100644
+--- a/rtl/inc/except.inc
++++ b/rtl/inc/except.inc
+@@ -65,6 +65,20 @@ begin
+     RunError(231);
+ end;
+ 
++procedure SaveExceptionState(var State: TExceptionState);
++begin
++  State.ExceptAddressStack := ExceptAddrStack;
++  State.ExceptObjectStack := ExceptObjectStack;
++  State.ExceptTryLevel := ExceptTryLevel;
++end;
++
++procedure RestoreExceptionState(constref State: TExceptionState);
++begin
++  ExceptAddrStack := State.ExceptAddressStack;
++  ExceptObjectStack := State.ExceptObjectStack;
++  ExceptTryLevel := State.ExceptTryLevel;
++end;
++
+ 
+ Function fpc_PushExceptAddr (Ft: {$ifdef CPU16}SmallInt{$else}Longint{$endif};_buf,_newaddr : pointer): PJmp_buf ;
+   [Public, Alias : 'FPC_PUSHEXCEPTADDR'];compilerproc;
+diff --git a/rtl/inc/objpash.inc b/rtl/inc/objpash.inc
+index 711969e897..301c6c0620 100644
+--- a/rtl/inc/objpash.inc
++++ b/rtl/inc/objpash.inc
+@@ -456,6 +456,12 @@
+          Property Flag : Boolean Read FFlag;
+          Property Name : String Read FName; 
+        end;
++
++       TExceptionState = record
++         ExceptAddressStack: Pointer;
++         ExceptObjectStack: Pointer;
++         ExceptTryLevel: Integer;
++       end;
+        
+   
+     Const
+@@ -486,6 +492,24 @@
+       Calling this method is only valid within an except block. }
+     procedure ReleaseExceptionObject;
+ 
++    { @abstract(stores the exception state)
++      FPC maintains an exception state at all times tracking
++      where the last except block is, the chain of raised exceptions
++      and how deep try-except blocks are nested.
++      This procedure stores the current state of the exception
++      handling in the @link(TExceptState) record passed as State.
++      To restore the exception state later on call
++      @link(RestoreExceptionState) }
++    procedure SaveExceptionState(var State: TExceptionState);
++
++    { @abstract(restores the exception state)
++      FPC maintains an exception state at all times tracking
++      where the last except block is, the chain of raised exceptions
++      and how deep try-except blocks are nested.
++      This procedure restores this state saved via a previous call to
++      @link(SaveExceptionState) }
++    procedure RestoreExceptionState(constref State: TExceptionState);
++
+   const
+     { for safe as operator support }
+     IObjectInstance: TGuid = '{D91C9AF4-3C93-420F-A303-BF5BA82BFD23}';

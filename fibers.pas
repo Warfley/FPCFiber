@@ -115,7 +115,7 @@ begin
   if TargetFiber = Self then
     raise EFiberNotActiveException.Create('Can not switch to the currently active fiber');
   TargetFiber.FLastFiber := Self;
-  ContextSwitch(Self, TargetFiber);;
+  ContextSwitch(Self, TargetFiber);
 end;
 
 procedure TFiber.Return;
